@@ -2,6 +2,7 @@
 #   fcd
 #   fh
 #   fls
+#   fgrep
 
 function init -a path --on-event init_fzf
     __fzf_init
@@ -17,6 +18,10 @@ end
 
 function fls -d "Fuzzily browse file listings and return selection"
   __fzf_files
+end
+
+function fgrep -d "Fuzzily search for pattern in path"
+    __fzf_grep $argv
 end
 
 function uninstall --on-event uninstall_fzf
@@ -40,6 +45,19 @@ function __fzf_init
     and commandline (cat $TMPDIR/fzf.result)
     commandline -f repaint
     rm -f $TMPDIR/fzf.result
+  end
+
+  function __fzf_grep
+      set -l pattern $argv[1]
+
+      set -q FZF_GREP_GOMMAND; or set -l FZF_GREP_COMMAND "command rg --column --line-number --no-heading --fixed-strings --ignore-case --hidden --follow --color "always" $pattern"
+
+      command rg --column --line-number --no-heading --fixed-strings \
+      --ignore-case --hidden --follow --color "always" $pattern 2>/dev/null \
+      | eval (__fzfcmd) +m --ansi > $TMPDIR/fzf.result
+      and commandline -i (cat $TMPDIR/fzf.result | cut -d ':' -f1 | __fzf_escape)
+      commandline -f repaint
+      rm -f $TMPDIR/fzf.result
   end
 
   function __fzf_files
