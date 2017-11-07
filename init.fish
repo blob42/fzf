@@ -49,15 +49,22 @@ function __fzf_init
 
   function __fzf_grep
       set -l pattern $argv[1]
+      set -lx SHELL /bin/bash
 
       set -q FZF_GREP_GOMMAND; or set -l FZF_GREP_COMMAND "command rg --column --line-number --no-heading --fixed-strings --ignore-case --hidden --follow --color "always" $pattern"
 
+      command pyenv rehash
+
       command rg --column --line-number --no-heading --fixed-strings \
-      --ignore-case --hidden --follow --color "always" $pattern 2>/dev/null \
-      | eval (__fzfcmd) +m --ansi > $TMPDIR/fzf.result
-      and commandline -i (cat $TMPDIR/fzf.result | cut -d ':' -f1 | __fzf_escape)
-      commandline -f repaint
-      rm -f $TMPDIR/fzf.result
+      --ignore-case --hidden --follow --color "always" $pattern  \
+      | fzf +m --bind 'ctrl-e:execute(vim +{2} {1} < /dev/tty)' \
+      --margin 3%,3% \
+      --bind 'ctrl-j:preview-down,ctrl-k:preview-up' --ansi -d ':' \
+      --preview "pygmentize {1}"
+      #> $TMPDIR/fzf.result
+      #and commandline -i (cat $TMPDIR/fzf.result | cut -d ':' -f1 | __fzf_escape)
+      #commandline -f repaint
+      #rm -f $TMPDIR/fzf.result
   end
 
   function __fzf_files
